@@ -15,6 +15,7 @@ MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F.
 	- `RegioCov.m`: evaluates geographical covariates.
 - `data`: contains data required by the scripts.
 	- `Clipped_Geology.asc`: raster map of geological classes covering the area of interest (processed via ArcGIS, based on data from the Swiss Federal Institute of Topography).
+	- `colZissou.mat`: colormap for Figure 5.
 	- `Covariates.mat`: covariate matrix (obtained via `additional_scripts/BuildCovariateMatrix.m`).
 	- `DTM.asc`: digital terrain model of the area of interest (processed via ArcGIS, based on data from the Swiss Federal Institute of Topography).
 	- `DTMad8.asc`: raster map of drainage areas (obtained via Taudem subroutine run on ArcGIS).
@@ -26,7 +27,7 @@ MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F.
 	- `StageDischarge.xlsx`: stage-discharge relationships (provided by the Swiss Federal Office for the Environment).
 	- `ThurData.m`: data on the catchment morphology and river network extraction (produced by `additional_scripts/CreateNetwork.m`).
 	- `ThurHydrology.m`: data on hydrological variables across the catchment (produced by `additional_scripts/hydrology.m`).
-	- `ThurQ.xlsx`: discharge time series (provided by the Swiss Federal Office for the Environment).
+	- `ThurQ_jun2016.xlsx`: discharge time series (provided by the Swiss Federal Office for the Environment).
 - `functions`: MATLAB functions required by the scripts.
 	- `DrawRiverMap.m`: draws thematic river maps.
 	- `eval_accuracy.m`: evaluates the accuracy of eDITH predictions with respect to kicknet data.

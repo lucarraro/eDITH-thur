@@ -68,9 +68,9 @@ Qlat=zeros(N_reach,1);
 for i=1:N_reach
     subset=find(down_reach==i);
     if ~isempty(subset)
-        Qlat(i)=Qmedian(i)-sum(Qmedian(subset));
+        Qlat(i)=Qjun(i)-sum(Qjun(subset));
     else
-        Qlat(i)=Qmedian(i);
+        Qlat(i)=Qjun(i);
     end
 end
 SourceArea=ReachWidth.*length_reach;
@@ -79,12 +79,20 @@ for i=1:N_reach
     for j=1:N_reach
         path=list_reach_downstream{i,j};
         if ~isempty(path)
-            PathVelocity(i,j)=length_downstream(i,j)/(sum(length_reach(path)./VelocityMedian(path)));
+            PathVelocity(i,j)=length_downstream(i,j)/(sum(length_reach(path)./Velocity(path)));
         end
     end
 end
 
 N_param=size(ZCovMat,2)+2;
+
+%% load colormap Zissou 1
+load('colZissou.mat')
+colmapZissou=zeros(length(colZissou),3);
+for i=1:length(colZissou)
+        str=colZissou{i};
+        colmapZissou(i,:) = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+end
 
 %% READ ResultsAll
 DecayTime=zeros(length(GenusName),1); CovariateSign=zeros(N_param-2,length(GenusName));
@@ -102,7 +110,7 @@ for g=1:length(GenusName)
     ResultsAll.(Genus).prod=quant_p(12,:)';
     ResultsAll.(Genus).Conc=quant_C(12,:)';
     
-    UnconnectedConc=quant_p(12,:)'.*length_reach.*ReachWidth./Qlat.*exp(-length_reach./VelocityMedian./(exp(quant_par(end,2))));
+    UnconnectedConc=quant_p(12,:)'.*length_reach.*ReachWidth./Qlat.*exp(-length_reach./Velocity./(exp(quant_par(end,2))));
     ResultsAll.(Genus).DetectionProbAll=UnconnectedConc./(1+UnconnectedConc);
     ResultsAll.(Genus).Presence= ResultsAll.(Genus).DetectionProbAll > 0.75;
     ResultsAll.(Genus).CovariateSign=(quant_par(1:N_param-2,1)>0) - (quant_par(1:N_param-2,3)<0);
@@ -119,7 +127,7 @@ for g=1:length(GenusName)
     AcceptedPerSite(g,:)=ResultsAll.(Genus).p_value>0.05;
 end
 
-%% Kicknet vs eDNA - evaulate accuracy
+%% Kicknet vs model - evaulate accuracy
 KicknetSiteReach=zeros(length(KicknetSiteID),1);
 for i=1:length(KicknetSiteID)
     k=KicknetSiteID(i);
@@ -130,18 +138,25 @@ Site_eDNAkick=find(ismember(siteID,KicknetSiteID));% ReadNumbers.(Genus)(Site_eD
 
 KicknetVsModel_mat=zeros(length(KicknetSiteID),length(GeneraOrder));
 Scores_eDNAKick=zeros(length(GeneraOrder),1);
-TruePositiveAll=zeros(length(GeneraOrder),1); TrueNegativeAll=zeros(length(GeneraOrder),1);
-FalsePositiveAll=zeros(length(GeneraOrder),1); FalseNegativeAll=zeros(length(GeneraOrder),1);
+TruePositiveAll=zeros(length(GeneraOrder),5); TrueNegativeAll=zeros(length(GeneraOrder),5);
+FalsePositiveAll=zeros(length(GeneraOrder),5); FalseNegativeAll=zeros(length(GeneraOrder),5);
+TruePositiveAll_eDNA=zeros(length(GeneraOrder),5); TrueNegativeAll_eDNA=zeros(length(GeneraOrder),5);
+FalsePositiveAll_eDNA=zeros(length(GeneraOrder),5); FalseNegativeAll_eDNA=zeros(length(GeneraOrder),5);
 
 for i=1:length(GeneraOrder)
     Genus=GeneraOrder{i,1};
-    % read model
+    % read model and eDNA
     if sum(strcmp(cellstr(GenusName),Genus))>0
+        % eDITH
         ind_model=find(strcmp(cellstr(GenusName),Genus));
         presence_probAll=DetectionProbAll(KicknetSiteReach,ind_model);
         presence_probAll(presence_probAll<1e-50)=1e-50;
+        % eDNA data
+        presence_prob_eDNA=sum(ReadNumbers.(Genus)>0,2)/3;
+        presence_prob_eDNA=presence_prob_eDNA(Site_eDNAkick);
     else
         presence_probAll=1e-50*ones(length(KicknetSiteReach),1);
+        presence_prob_eDNA=1e-50*ones(length(KicknetSiteReach),1);
     end
     % read kicknet data
     if sum(strcmp(cellstr(KicknetName),Genus))>0
@@ -152,28 +167,64 @@ for i=1:length(GeneraOrder)
     end
     % calculate probability
     for j=1:length(KicknetSiteReach)
+        s=stream_order_reach(KicknetSiteReach(j));
         if presence_kick(j)==1
             Scores_eDNAKick(i) = Scores_eDNAKick(i) + log(presence_probAll(j));
-            if presence_probAll(j) > 2/3
-                TruePositiveAll(i) = TruePositiveAll(i) + 1;
+            if presence_probAll(j) >= 2/3
+                TruePositiveAll(i,s) = TruePositiveAll(i,s) + 1;
                 KicknetVsModel_mat(j,i)=1;
             else
-                FalseNegativeAll(i) = FalseNegativeAll(i) + 1;
+                FalseNegativeAll(i,s) = FalseNegativeAll(i,s) + 1;
                 KicknetVsModel_mat(j,i)=2;
+            end
+            if presence_prob_eDNA(j) >= 2/3
+                TruePositiveAll_eDNA(i,s) = TruePositiveAll_eDNA(i,s) + 1;
+            else
+                FalseNegativeAll_eDNA(i,s) = FalseNegativeAll_eDNA(i,s) + 1;
             end
         else
             Scores_eDNAKick(i) = Scores_eDNAKick(i) + log(1-presence_probAll(j));
-            if presence_probAll(j) > 2/3
-                FalsePositiveAll(i) = FalsePositiveAll(i) + 1;
+            if presence_probAll(j) >= 2/3
+                FalsePositiveAll(i,s) = FalsePositiveAll(i,s) + 1;
                 KicknetVsModel_mat(j,i)=3;
             else
-                TrueNegativeAll(i) = TrueNegativeAll(i) + 1;
+                TrueNegativeAll(i,s) = TrueNegativeAll(i,s) + 1;
                 KicknetVsModel_mat(j,i)=4;
+            end
+            if presence_prob_eDNA(j) >= 2/3
+                FalsePositiveAll_eDNA(i,s) = FalsePositiveAll_eDNA(i,s) + 1;
+            else
+                TrueNegativeAll_eDNA(i,s) = TrueNegativeAll_eDNA(i,s) + 1;
             end
         end
     end
 end
-AccuracyAll=(TruePositiveAll+TrueNegativeAll)/length(KicknetSiteReach);
+TP=sum(TruePositiveAll,2); FP=sum(FalsePositiveAll,2); 
+TN=sum(TrueNegativeAll,2); FN=sum(FalseNegativeAll,2); 
+AccuracyAll=(TP+TN)/length(KicknetSiteReach);
+AccuracywFPAll=(TP+TN+FP)/length(KicknetSiteReach);
+% eval accuracy per stream order
+Accuracy_SO=zeros(length(GeneraOrder),4); Accuracy_SO_FP=zeros(length(GeneraOrder),4);
+for i=1:3
+Accuracy_SO(:,i)=(TruePositiveAll(:,i)+TrueNegativeAll(:,i))/sum(stream_order_reach(KicknetSiteReach)==i);
+Accuracy_SO_FP(:,i)=(TruePositiveAll(:,i)+TrueNegativeAll(:,i)+FalsePositiveAll(:,i))/sum(stream_order_reach(KicknetSiteReach)==i);
+end
+Accuracy_SO(:,4)=(sum(TruePositiveAll(:,4:5),2)+sum(TrueNegativeAll(:,4:5),2))/sum(stream_order_reach(KicknetSiteReach)>3);
+Accuracy_SO_FP(:,4)=(sum(TruePositiveAll(:,4:5),2)+sum(TrueNegativeAll(:,4:5),2)+sum(FalsePositiveAll(:,4:5),2))/sum(stream_order_reach(KicknetSiteReach)>3);
+
+TP_eDNA=sum(TruePositiveAll_eDNA,2); FP_eDNA=sum(FalsePositiveAll_eDNA,2); 
+TN_eDNA=sum(TrueNegativeAll_eDNA,2); FN_eDNA=sum(FalseNegativeAll_eDNA,2);
+AccuracyAll_eDNA=(TP_eDNA + TN_eDNA)/length(KicknetSiteReach);
+AccuracywFPAll_eDNA=(TP_eDNA + TN_eDNA + FP_eDNA)/length(KicknetSiteReach);
+% eval accuracy per stream order
+Accuracy_SO_eDNA=zeros(length(GeneraOrder),4); Accuracy_SO_FP_eDNA=zeros(length(GeneraOrder),4);
+for i=1:3
+Accuracy_SO_eDNA(:,i)=(TruePositiveAll_eDNA(:,i)+TrueNegativeAll_eDNA(:,i))/sum(stream_order_reach(KicknetSiteReach)==i);
+Accuracy_SO_FP_eDNA(:,i)=(TruePositiveAll_eDNA(:,i)+TrueNegativeAll_eDNA(:,i)+FalsePositiveAll_eDNA(:,i))/sum(stream_order_reach(KicknetSiteReach)==i);
+end
+Accuracy_SO_eDNA(:,4)=(sum(TruePositiveAll_eDNA(:,4:5),2)+sum(TrueNegativeAll_eDNA(:,4:5),2))/sum(stream_order_reach(KicknetSiteReach)>3);
+Accuracy_SO_FP_eDNA(:,4)=(sum(TruePositiveAll_eDNA(:,4:5),2)+sum(TrueNegativeAll_eDNA(:,4:5),2)+sum(FalsePositiveAll_eDNA(:,4:5),2))/sum(stream_order_reach(KicknetSiteReach)>3);
+
 
 [~,indScore]=sort(Scores_eDNAKick,'descend');
 [~,indAccuracy]=sort(AccuracyAll,'descend');
@@ -185,25 +236,34 @@ for i=1:length(indAccuracy)
 end
 indAccuracy2(indAccuracy2==0)=[];
 
-table(cellstr(GeneraOrder(indAccuracy,1)),Scores_eDNAKick(indAccuracy),TruePositiveAll(indAccuracy),FalsePositiveAll(indAccuracy),...
-    TrueNegativeAll(indAccuracy),FalseNegativeAll(indAccuracy),AccuracyAll(indAccuracy),...
+table(cellstr(GeneraOrder(indAccuracy,1)),Scores_eDNAKick(indAccuracy),TP(indAccuracy),FP(indAccuracy),...
+    TN(indAccuracy),FN(indAccuracy),AccuracyAll(indAccuracy),...
     'Variablenames',{'Genus','Score','TP_all','FP_all','TN_all','FN_all','ACC_all'})
 
 % display accuracy by TP, TN, FP, FN
-[~,indFN]=sort(1e6*FalseNegativeAll-TruePositiveAll-TrueNegativeAll,'ascend');
-indFN=indFN(ismember(GeneraOrder(indFN,1),GenusName)); % pick only the genera detected by eDNA
+[~,indFN_all]=sort(1e6*FN-TP-TN,'ascend');
+indFN=indFN_all(ismember(GeneraOrder(indFN_all,1),GenusName)); % pick only the genera detected by eDNA
 figure; 
-b=bar([TruePositiveAll(indFN)/60 TrueNegativeAll(indFN)/60 FalsePositiveAll(indFN)/60 FalseNegativeAll(indFN)/60],0.85,'stacked',...
-    'facecolor','flat','edgecolor','n'); box off; 
+b=bar([TP(indFN)/60 TN(indFN)/60 FP(indFN)/60 FN(indFN)/60],0.85,'stacked',...
+    'facecolor','flat','edgecolor','n');  box off;
 colormap([0 0.3 0; 0 0.6 0; 0.7 0.7 0; 1 0 0]);
 for k = 1:4
     b(k).CData = k;
 end
 xtickangle(60); ylabel('Fraction of sites')
 legend('TP','TN','FP','FN','location','eastoutside'); legend boxoff
-set(gca,'tickdir','out','ylim',[0 1],'ytick',[0:0.25:1],'xtick',[1:50],'xticklabel',all_to_alphabet(indFN))
+set(gca,'tickdir','out','ylim',[0 1],'ytick',[0:0.25:1],'xtick',[1:50],'xticklabel',1:50) %all_to_alphabet(indFN)
+
+% index used for subsequent plots
+which_indFN=nan(length(GeneraOrder),1);
+for i=1:length(GeneraOrder)
+    if not(isempty( find(indFN==i) ))
+        which_indFN(i) = find(indFN==i);
+    end
+end
 
 %% Map of kicknet and eDNA richness
+zismap=colmapZissou(round(linspace(1,length(colmapZissou),21)),:);
 jetmap=jet(21);
 AllRichness=sum(PresenceMat,2);
 KicknetRichness=sum(KicknetPresence,2);
@@ -219,47 +279,67 @@ for i=1:length(GenusName)
 end
 
 if show_maps
-    DrawRiverMap(nan(N_reach,1),20,0,'Kicknet richness','JET',geometry,1,1);
+    f1=DrawRiverMap(nan(N_reach,1),20,0,'Kicknet richness','JET',geometry,1,1);
     hold on;
     for i=1:length(KicknetSiteID)
         plot(KicknetSiteX(i),KicknetSiteY(i),'o','markerfacecolor',...
             jetmap(KicknetRichness(i)+1,:),'markeredgecolor','k')
     end
-    DrawRiverMap(nan(N_reach,1),20,0,'eDNA richness','JET',geometry,1,1);
+    set(gcf,'Renderer','painters'); saveas(f1,'KicknetRichness.pdf');
+    f1=DrawRiverMap(nan(N_reach,1),20,0,'eDNA richness','JET',geometry,1,1);
     hold on;
     for i=1:length(siteID)
         plot(siteX(i),siteY(i),'o','markerfacecolor',jetmap(eDNA_richness(i)+1,:),'markeredgecolor','k')
     end
-    DrawRiverMap(AllRichness,20,0,'eDITH richness','JET',geometry,1,1);
+    set(gcf,'Renderer','painters'); saveas(f1,'eDNARichness.pdf');
+    f1=DrawRiverMap(AllRichness,20,0,'eDITH richness','JET',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'eDITHRichness.pdf');
 end
 
 %% boxplots of richness per stream order
 dbp=cell(4,3); 
 for i=1:3
     dbp{i,1}=AllRichness(stream_order_reach==i);
-    dbp{i,2}=KicknetRichness(stream_order_reach(KicknetSiteReach)==i);
-    dbp{i,3}=eDNA_richness(stream_order_reach(SitesReach)==i);
+    dbp{i,2}=eDNA_richness(stream_order_reach(SitesReach)==i);
+    dbp{i,3}=KicknetRichness(stream_order_reach(KicknetSiteReach)==i);
 end
 dbp{4,1}=AllRichness(stream_order_reach>3);
-dbp{4,2}=KicknetRichness(stream_order_reach(KicknetSiteReach)>3);
-dbp{4,3}=eDNA_richness(stream_order_reach(SitesReach)>3);
-cmap=[1 0.5 0 0.8; 0 0.5 1 0.8; 0.5 0 1 0.8];
-figure; multiple_boxplot(dbp,{'1','2','3','>3',},{'model','kicknet','eDNA'},cmap');
+dbp{4,2}=eDNA_richness(stream_order_reach(SitesReach)>3);
+dbp{4,3}=KicknetRichness(stream_order_reach(KicknetSiteReach)>3);
+cmap=[0.2 0.8 0 0.8; 
+    1 0.5 0 0.8; 
+    0.6 0 1 0.8];
+figure; multiple_boxplot(dbp,{'1','2','3','>3',},{'eDITH','eDNA','kicknet'},cmap');
 box off; xlabel('Strahler stream order'); ylabel('Genera richness')
 set(gca,'tickdir','out','ytick',[0:5:20]); legend boxoff
 title([histcounts(stream_order_reach) histcounts(stream_order_reach(KicknetSiteReach))])
+
+% perform 2-sample KS test
+logicalStr={'TRUE';'FALSE'};
+[h,p]=kstest2(dbp{1,1},dbp{1,3});
+disp(sprintf(['H0: eDITH and kicknet have same distribution for stream order 1: ',logicalStr{h+1},'    p: ',num2str(p)]))
+[h,p]=kstest2(dbp{1,2},dbp{1,3});
+disp(sprintf(['H0: eDNA and kicknet have same distribution for stream order 1: ',logicalStr{h+1},'    p: ',num2str(p)]))
+[h,p]=kstest2(dbp{4,1},dbp{4,2});
+disp(sprintf(['H0: eDITH and kicknet have same distribution for stream order > 3: ',logicalStr{h+1},'    p: ',num2str(p)]))
+[h,p]=kstest2(dbp{4,2},dbp{4,3});
+disp(sprintf(['H0: eDNA and kicknet have same distribution for stream order > 3: ',logicalStr{h+1},'    p: ',num2str(p)]))
+
 
 %% covariate table ordered by indFN
 cmapITA3=[1 0 0; 1 1 1; 0 1 0];
 figure; imagesc(CovariateSign(:,all_to_eDNA(indFN))'); colormap(cmapITA3); cb=colorbar; cb.Ticks=[-1; 0; 1];
 set(gca,'tickdir','out','ytick',1:50,'yticklabel',[1:50],'xtick',1:N_param-2,'xticklabel',CovNames)
 xtickangle(60)
+figure('units','normalized','outerposition',[0 0 1 1]); imagesc(CovariateSign(:,all_to_eDNA(indFN))'); colormap(cmapITA3); cb=colorbar; cb.Ticks=[-1; 0; 1];
+set(gca,'tickdir','out','ytick',1:50,'yticklabel',GeneraOrder(indFN,1),'xtick',1:N_param-2,'xticklabel',CovNames)
+xtickangle(60)
 
 %% Goodness-of-Fit histogram
-figure; bar(AcceptedAllSites(all_to_eDNA(indFN))/length(siteID))
+figure; bar(AcceptedAllSites(all_to_eDNA(indFN))/length(siteID),'facecolor',[0.5 0.5 0.5]); box on
 box off; set(gca,'tickdir','out','ytick',[0:0.25:1],'xtick',1:50,'xticklabel',[1:50])
 xtickangle(60)
-ylabel('Fraction of sites where H_0 can''t be rejected')
+ylabel('Fraction of sites where H_0 cannot be rejected')
 
 %% covariates' effect
 % tornado plots
@@ -291,27 +371,27 @@ legend('Positive','Negative','location','southwest'); legend boxoff
 table(cellstr(GenusName),DecayTime)
 [~,indDecayTime]=sort(DecayTime,'descend');
 f=figure; bar(DecayTime(indDecayTime),'facecolor',[0.5 0.5 0.5]); box off
-set(gca,'tickdir','out','ylim',[0 15],'ytick',[0:5:15],'xtick',[1:50],'xticklabel',GeneraOrder((eDNA_to_all(indDecayTime)),1))
+set(gca,'tickdir','out','ylim',[0 10],'ytick',[0:5:10],'xtick',[1:50],'xticklabel',which_indFN(eDNA_to_all(indDecayTime))) %GeneraOrder((eDNA_to_all(indDecayTime)),1)
 xtickangle(60); ylabel('Decay time [h]')
 yyaxis right
 ax=gca;
-set(gca,'tickdir','out','ylim',[0 15*3.6],'ytick',[0:25:50])
+set(gca,'tickdir','out','ylim',[0 10*3.6],'ytick',[0:10:30])
 ylabel('Decay distance [km]')
 
 %% Richness maps
 if show_maps
-    f1=DrawRiverMap(ResultsAll.Habroleptoides.DetectionProbAll,1,0,'Habroleptoides (Ephemeroptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'HabroDetProb.pdf'); 
-    f1=DrawRiverMap(ResultsAll.Leuctra.DetectionProbAll,1,0,'Leuctra (Plecoptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'LeuctraDetProb.pdf'); 
-    f1=DrawRiverMap(ResultsAll.Athripsodes.DetectionProbAll,1,0,'Athripsodes (Trichoptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'AthripsDetProb.pdf'); 
-    f1=DrawRiverMap(log10(ResultsAll.Habroleptoides.prod),-1,-4,'Habroleptoides (Ephemeroptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'HabroProd.pdf'); 
-    f1=DrawRiverMap(log10(ResultsAll.Leuctra.prod),-1,-4,'Leuctra (Plecoptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'LecutraProd.pdf'); 
-    f1=DrawRiverMap(log10(ResultsAll.Athripsodes.prod),-1,-4,'Athripsodes (Trichoptera)','W&B',geometry,1,1);
-    %set(gcf,'Renderer','painters'); saveas(f1,'AthrisProd.pdf'); 
+    f1=DrawRiverMap(ResultsAll.Habroleptoides.DetectionProbAll,1,0,'Habroleptoides (Ephemeroptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'HabroDetProb.pdf'); 
+    f1=DrawRiverMap(ResultsAll.Protonemura.DetectionProbAll,1,0,'Protonemura (Plecoptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'ProtonemuraDetProb.pdf'); 
+    f1=DrawRiverMap(ResultsAll.Athripsodes.DetectionProbAll,1,0,'Athripsodes (Trichoptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'AthripsDetProb.pdf'); 
+    f1=DrawRiverMap(log10(ResultsAll.Habroleptoides.prod),0,-6,'Habroleptoides (Ephemeroptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'HabroProd.pdf'); 
+    f1=DrawRiverMap(log10(ResultsAll.Protonemura.prod),0,-6,'Protonemura (Plecoptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'ProtonemuraProd.pdf'); 
+    f1=DrawRiverMap(log10(ResultsAll.Athripsodes.prod),0,-6,'Athripsodes (Trichoptera)','ZIS',geometry,1,1,colmapZissou);
+    set(gcf,'Renderer','painters'); saveas(f1,'AthrisProd.pdf'); 
 end
 
 %% Detection probability maps for all genera
@@ -388,7 +468,7 @@ catch
                 for i=1:N_param
                     quant_par(i,:)=quantile(par(:,i),[0.025 0.5 0.975]);
                 end
-                UnconnectedConc=quant_p(12,:)'.*length_reach.*ReachWidth./Qlat.*exp(-length_reach./VelocityMedian./(exp(quant_par(end,2))));
+                UnconnectedConc=quant_p(12,:)'.*length_reach.*ReachWidth./Qlat.*exp(-length_reach./Velocity./(exp(quant_par(end,2))));
                 Results.(['v',num2str(N_ValidSites)]).(['r',num2str(RUN)]).(Genus).DetectionProb=UnconnectedConc./(1+UnconnectedConc);
                 Results.(['v',num2str(N_ValidSites)]).(['r',num2str(RUN)]).ValidSites=ValidSites;
                 CalibSites=setdiff(1:61,ValidSites);
@@ -432,7 +512,7 @@ catch
 end
 
 %% subsampling - figure GOF
-figure('units','centimeters','position',[0 0 25 10]);
+figure('units','centimeters','position',[0 0 21 4.5]);
 bar(AcceptedAllSites(all_to_eDNA(indFN))/61,'FaceColor','n'); hold on; box off
 set(gca,'tickdir','out','ytick',[0:0.2:1],'xtick',[1:50],'ylim',[0.6 1])
 ylabel('Fraction of sites where H_0 cannot be rejected')
@@ -500,7 +580,7 @@ MeanLossOfGOFvalid = mean(LossOfGOFvalid)
 
 
 %% subsampling - figure accuracy
-figure('units','centimeters','position',[0 0 25 10]);
+figure('units','centimeters','position',[0 0 21 4.5]);
 bar(AccuracyAll(indFN),'FaceColor','n'); hold on; box off
 set(gca,'tickdir','out','ytick',[0.25:0.25:1],'xtick',[1:50],'ylim',[0.25 1])
 ylabel('Accuracy')
@@ -535,4 +615,15 @@ for g=1:length(GenusName)
 end
 % mean (across genera) Loss of accuracy due to reduction in number of sampling sites
 MeanLossOfAccuracy = mean(LossOfAccuracy)
+
+%% Figure distribution of stream order values at eDNA sampling sites
+% the missing kicknet site has stream order 5
+figure('units','centimeters','position',[0 0 21 6]); 
+subplot(1,2,1); histogram(stream_order_reach(SitesReach),'facecolor',[0.5 0.5 0.5])
+set(gca,'tickdir','out','xtick',[1:5]); box off
+xlabel('Stream order'); ylabel('Number of sampling sites')
+subplot(1,2,2); histogram(stream_order_reach,'facecolor',[0.5 0.5 0.5])
+set(gca,'tickdir','out','xtick',[1:5]); box off
+xlabel('Stream order'); ylabel('Number of reaches')
+
 

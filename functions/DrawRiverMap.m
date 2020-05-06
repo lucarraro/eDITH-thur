@@ -1,4 +1,4 @@
-function [f1]=DrawRiverMap(vector,maxval,minval,title_string,cmap,geometry,newfig,show_leg)
+function [f1]=DrawRiverMap(vector,maxval,minval,title_string,cmap,geometry,newfig,show_leg,colmapZissou)
 
 % load geometrical features of the river
 [X,Y,XX,YY,Xc,Yc,subcatch,N_reach,AD_pixel,nnodes,outlet,area_upstream,reach]=v2struct(geometry);
@@ -24,6 +24,9 @@ elseif strcmp(cmap,'W&B')
 elseif strcmp(cmap,'W&DR')
     colmap=[[linspace(1,1,50)'; linspace(1,0.5,50)'] [(linspace(1,0,50)).^0.5'; 
         linspace(0,0,50)'] [(linspace(1,0,50)).^0.5'; linspace(0,0,50)']];
+elseif strcmp(cmap,'ZIS')
+    ind=round(linspace(1,length(colmapZissou),100));
+    colmap=colmapZissou(ind,:);
 end
 
 % create new figure

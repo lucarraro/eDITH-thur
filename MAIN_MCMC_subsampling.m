@@ -1,9 +1,9 @@
 clear all; close all; clc
 
 rng('shuffle')
-addpath('functions','data')
+addpath('functions','data','additional_scripts','results')
 
-RUN = 3; N_ValidSites = 36; % change RUN (=[1; 2; 3]) and N_ValidSites (=[12; 24; 36]) values to perform different runs
+RUN = 3; N_ValidSites = 12; % change RUN (=[1; 2; 3]) and N_ValidSites (=[12; 24; 36]) values to perform different runs
 
 load ThurData
 load ThurHydrology
@@ -17,7 +17,7 @@ for i=1:N_reach
     for j=1:N_reach
         path=list_reach_downstream{i,j};
         if ~isempty(path)
-            PathVelocity(i,j)=length_downstream(i,j)/(sum(length_reach(path)./VelocityMedian(path)));
+            PathVelocity(i,j)=length_downstream(i,j)/(sum(length_reach(path)./Velocity(path)));
         end
     end
 end
@@ -87,7 +87,7 @@ for indGenus_noShuffle = 1:length(GenusName)
     for indPart = 1:500
         parInit(:,indPart)=[normrnd(0,3,N_param-2,1); normrnd(-10,3); normrnd(9,0.5)]; % initialize parameters' values
         [Prod,Conc] = eval_model(parInit(1:N_param-2,indPart),exp(parInit(N_param-1,indPart)),exp(parInit(N_param,indPart)),...
-            N_reach,ZCovMat,SourceArea,reach_upstream,Qmedian,length_downstream,PathVelocity);
+            N_reach,ZCovMat,SourceArea,reach_upstream,Qjun,length_downstream,PathVelocity);
         LoglikInit(indPart,1) = sum(log(normpdf(parInit([1:N_param-2 N_param],indPart),[zeros(N_param-2,1); 9],[3*ones(N_param-2,1); 0.5]))) + ...
             eval_likelihood(1,Conc,SitesReach(CalibSites),ReadNumbers.(Genus)(CalibSites,:));
         
@@ -96,7 +96,7 @@ for indGenus_noShuffle = 1:length(GenusName)
     indAccept=1; indInit=find(LoglikInit==max(LoglikInit));
     par(1,:)=parInit(:,indInit); Loglik(1)=LoglikInit(indInit);
     [Prod,Conc] = eval_model(par(1:N_param-2)',exp(par(N_param-1)),exp(par(N_param)),...
-            N_reach,ZCovMat,SourceArea,reach_upstream,Qmedian,length_downstream,PathVelocity);
+            N_reach,ZCovMat,SourceArea,reach_upstream,Qjun,length_downstream,PathVelocity);
     prod_mat(1,:)=Prod'; Conc_mat(1,:)=Conc'; 
     parOld=par(1,:); LoglikOld=Loglik(1);
     disp(sprintf('%s: Accepted: %d  -  Total: 1  -  Loglik %.1f  - tau: %.1f h  -  Elapsed time: %.0f s',...
@@ -109,7 +109,7 @@ for indGenus_noShuffle = 1:length(GenusName)
         COVmat=COVmatReal*exp(-rej/5000);  
         parNew = parOld + q(COVmat,N_param);
         [Prod,Conc] = eval_model(parNew(1:N_param-2)',exp(parNew(N_param-1)),exp(parNew(N_param)),...
-            N_reach,ZCovMat,SourceArea,reach_upstream,Qmedian,length_downstream,PathVelocity);
+            N_reach,ZCovMat,SourceArea,reach_upstream,Qjun,length_downstream,PathVelocity);
         LoglikNew = sum(log(normpdf(parNew([1:N_param-2 N_param]),[zeros(1,N_param-2) 9],[3*ones(1,N_param-2) 0.5]))) + ...
             eval_likelihood(1,Conc,SitesReach(CalibSites),ReadNumbers.(Genus)(CalibSites,:));
         if LoglikNew > LoglikOld || rand<exp(LoglikNew-LoglikOld)
