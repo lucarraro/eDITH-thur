@@ -1,0 +1,9 @@
+'GenusID': Genus ID as in Supplementary Table 1
+'GenusName': Genus name as in Supplementary Table 1
+'TP': fraction of sites marked as true positives
+'TN': fraction of sites marked as true negatives
+'FP': fraction of sites marked as false positives
+'FN': fraction of sites marked as false negatives
+'Gof': goodness of fit, i.e. fraction of sites where H0 cannot be rejected
+'AccASXy': values of accuracy for simulation group ASX (= AS1, AS2, AS3) and realization y (= a, b, c)
+'GofASXy': values of goodness of fit for simulation group ASX (= AS1, AS2, AS3) and realization y (= a, b, c)

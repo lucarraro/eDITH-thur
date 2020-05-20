@@ -1,0 +1,4 @@
+'A': drainage area [km^2]
+'Q': discharge [m^3/s]
+'w': width [m]
+'D': depth [m]
