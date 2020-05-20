@@ -1,0 +1,2 @@
+'Type': data type (eDITH, eDNA, kicknet)
+'GenusRichness': Genus richness value for a given reach/site according to the dataset specified in 'Type'

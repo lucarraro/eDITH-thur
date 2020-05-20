@@ -296,6 +296,22 @@ if show_maps
     set(gcf,'Renderer','painters'); saveas(f1,'eDITHRichness.pdf');
 end
 
+% prepare data for csv export
+dataframe=cell(N_reach+length(SitesReach)+length(Site_eDNAkick),2);
+k=1;
+for i=1:N_reach
+    dataframe{k,1}='eDITH'; dataframe{k,2}=AllRichness(i); k=k+1;
+end
+for i=1:length(SitesReach)
+    dataframe{k,1}='eDNA'; dataframe{k,2}=eDNA_richness(i); k=k+1;
+end
+for i=1:length(Site_eDNAkick)
+    dataframe{k,1}='kicknet'; dataframe{k,2}=KicknetRichness(i); k=k+1;
+end
+
+T=table(dataframe(:,1),[dataframe{:,2}]','VariableNames',{'Type','GenusRichness'});
+writetable(T,'source_data/Fig5.csv')
+
 %% boxplots of richness per stream order
 dbp=cell(4,3); 
 for i=1:3
@@ -325,6 +341,71 @@ disp(sprintf(['H0: eDITH and kicknet have same distribution for stream order > 3
 [h,p]=kstest2(dbp{4,2},dbp{4,3});
 disp(sprintf(['H0: eDNA and kicknet have same distribution for stream order > 3: ',logicalStr{h+1},'    p: ',num2str(p)]))
 
+% prepare data for export in csv
+dataframe=cell(N_reach+length(SitesReach)+length(Site_eDNAkick),3);
+k=1; tmp=length(dbp{1,1});
+for i=1:tmp
+dataframe{k,1}='eDITH'; dataframe{k,2}=1; dataframe{k,3}=dbp{1,1}(i);
+k=k+1;
+end
+tmp=length(dbp{2,1});
+for i=1:tmp
+dataframe{k,1}='eDITH'; dataframe{k,2}=2; dataframe{k,3}=dbp{2,1}(i);
+k=k+1;
+end
+tmp=length(dbp{3,1});
+for i=1:tmp
+dataframe{k,1}='eDITH'; dataframe{k,2}=3; dataframe{k,3}=dbp{3,1}(i);
+k=k+1;
+end
+tmp=length(dbp{4,1});
+for i=1:tmp
+dataframe{k,1}='eDITH'; dataframe{k,2}=4; dataframe{k,3}=dbp{4,1}(i);
+k=k+1;
+end
+tmp=length(dbp{1,2});
+for i=1:tmp
+dataframe{k,1}='eDNA'; dataframe{k,2}=1; dataframe{k,3}=dbp{1,1}(i);
+k=k+1;
+end
+tmp=length(dbp{2,2});
+for i=1:tmp
+dataframe{k,1}='eDNA'; dataframe{k,2}=2; dataframe{k,3}=dbp{2,1}(i);
+k=k+1;
+end
+tmp=length(dbp{3,2});
+for i=1:tmp
+dataframe{k,1}='eDNA'; dataframe{k,2}=3; dataframe{k,3}=dbp{3,1}(i);
+k=k+1;
+end
+tmp=length(dbp{4,2});
+for i=1:tmp
+dataframe{k,1}='eDNA'; dataframe{k,2}=4; dataframe{k,3}=dbp{4,1}(i);
+k=k+1;
+end
+tmp=length(dbp{1,3});
+for i=1:tmp
+dataframe{k,1}='Kicknet'; dataframe{k,2}=1; dataframe{k,3}=dbp{1,1}(i);
+k=k+1;
+end
+tmp=length(dbp{2,3});
+for i=1:tmp
+dataframe{k,1}='Kicknet'; dataframe{k,2}=2; dataframe{k,3}=dbp{2,1}(i);
+k=k+1;
+end
+tmp=length(dbp{3,3});
+for i=1:tmp
+dataframe{k,1}='Kicknet'; dataframe{k,2}=3; dataframe{k,3}=dbp{3,1}(i);
+k=k+1;
+end
+tmp=length(dbp{4,3});
+for i=1:tmp
+dataframe{k,1}='Kicknet'; dataframe{k,2}=4; dataframe{k,3}=dbp{4,1}(i);
+k=k+1;
+end
+
+T=table(dataframe(:,1),[dataframe{:,2}]',[dataframe{:,3}]','VariableNames',{'Type','StreamOrder','GenusRichness'});
+writetable(T,'source_data/Fig6.csv')
 
 %% covariate table ordered by indFN
 cmapITA3=[1 0 0; 1 1 1; 0 1 0];
@@ -378,6 +459,11 @@ ax=gca;
 set(gca,'tickdir','out','ylim',[0 10*3.6],'ytick',[0:10:30])
 ylabel('Decay distance [km]')
 
+
+T=table(which_indFN(eDNA_to_all(indDecayTime)),GeneraOrder(eDNA_to_all(indDecayTime),1),DecayTime(indDecayTime),...
+    'VariableNames',{'GenusID','GenusName','DecayTime'});
+writetable(T,'source_data/Fig3.csv')
+
 %% Richness maps
 if show_maps
     f1=DrawRiverMap(ResultsAll.Habroleptoides.DetectionProbAll,1,0,'Habroleptoides (Ephemeroptera)','ZIS',geometry,1,1,colmapZissou);
@@ -393,6 +479,11 @@ if show_maps
     f1=DrawRiverMap(log10(ResultsAll.Athripsodes.prod),0,-6,'Athripsodes (Trichoptera)','ZIS',geometry,1,1,colmapZissou);
     set(gcf,'Renderer','painters'); saveas(f1,'AthrisProd.pdf'); 
 end
+
+T=table(ResultsAll.Habroleptoides.prod,ResultsAll.Protonemura.prod,ResultsAll.Athripsodes.prod,...
+    ResultsAll.Habroleptoides.DetectionProbAll,ResultsAll.Protonemura.DetectionProbAll,ResultsAll.Athripsodes.DetectionProbAll,...
+    'VariableNames',{'HabroleptoidesDensity','ProtonemuraDensity','AthripsodesDensity','HabroleptoidesDetProb','ProtonemuraDetProb','AthripsodesDetProb'});
+writetable(T,'source_data/Fig4.csv')
 
 %% Detection probability maps for all genera
 if additional_maps
@@ -538,7 +629,6 @@ for i=1:length(GenusName)
     plot([i i]+0.2,[min(GOF_v36(i,:)) max(GOF_v36(i,:))]/61,'g')
 end
 
-
 %% evaluate LossOfGOF
 LossOfGOF=zeros(length(GenusName),3);
 for g=1:length(GenusName)
@@ -606,6 +696,22 @@ for i=1:length(GenusName)
     plot([i i]+0.2,[min(Accuracy_v36(i,:)) max(Accuracy_v36(i,:))],'g')
 end
 
+% export csv for Figure 7
+T=table([1:50]',GeneraOrder(indFN,1),TP(indFN)/length(Site_eDNAkick),TN(indFN)/length(Site_eDNAkick),...
+    FP(indFN)/length(Site_eDNAkick),FN(indFN)/length(Site_eDNAkick),...
+    AcceptedAllSites(all_to_eDNA(indFN))/length(siteID),...
+    Accuracy_v12(:,1),Accuracy_v12(:,2),Accuracy_v12(:,3),...
+    Accuracy_v24(:,1),Accuracy_v24(:,2),Accuracy_v24(:,3),...
+    Accuracy_v36(:,1),Accuracy_v36(:,2),Accuracy_v36(:,3),...
+    GOF_v12(:,1)/length(siteID),GOF_v12(:,2)/length(siteID),GOF_v12(:,3)/length(siteID),...
+    GOF_v24(:,1)/length(siteID),GOF_v24(:,2)/length(siteID),GOF_v24(:,3)/length(siteID),...
+    GOF_v36(:,1)/length(siteID),GOF_v36(:,2)/length(siteID),GOF_v36(:,3)/length(siteID),...
+    'VariableNames',{'GenusID','GenusName','TP','TN','FP','FN','Gof','AccAS1a','AccAS1b','AccAS1c',...
+    'AccAS2a','AccAS2b','AccAS2c','AccAS3a','AccAS3b','AccAS3c','GofAS1a','GofAS1b','GofAS1c',...
+    'GofAS2a','GofAS2b','GofAS2c','GofAS3a','GofAS3b','GofAS3c'})
+
+writetable(T,'source_data/Fig7.csv')
+
 %% evaluate LossOfAccuracy
 LossOfAccuracy=zeros(length(GenusName),3);
 for g=1:length(GenusName)
@@ -615,6 +721,15 @@ for g=1:length(GenusName)
 end
 % mean (across genera) Loss of accuracy due to reduction in number of sampling sites
 MeanLossOfAccuracy = mean(LossOfAccuracy)
+
+T=table(GenusName,LossOfGOFcalib(:,1),LossOfGOFcalib(:,2),LossOfGOFcalib(:,3),...
+    LossOfGOFvalid(:,1),LossOfGOFvalid(:,2),LossOfGOFvalid(:,3),...
+    LossOfAccuracy(:,1),LossOfAccuracy(:,2),LossOfAccuracy(:,3),'VariableNames',...
+    {'GenusName','LossOfGofCalibAS1','LossOfGofCalibAS2','LossOfGofCalibAS3',...
+    'LossOfGofValidAS1','LossOfGofValidAS2','LossOfGofValidAS3',...
+    'LossOfAccuracyAS1','LossOfAccuracyAS2','LossOfAccuracyAS3'});
+
+writetable(T,'source_data/Table1.csv');
 
 %% Figure distribution of stream order values at eDNA sampling sites
 % the missing kicknet site has stream order 5

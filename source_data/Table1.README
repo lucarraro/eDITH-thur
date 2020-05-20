@@ -1,0 +1,4 @@
+'GenusName': genus name
+'LossOfGofASXCalib': loss of goodness of fit for simulation group ASX (=AS1, AS2, AS3) at the calibration sites
+'LossOfGofASXValid': loss of goodness of fit for simulation group ASX (=AS1, AS2, AS3) at the validation sites
+'LossOfAccuracyASX': loss of accuracy for simulation group ASX (=AS1, AS2, AS3) 

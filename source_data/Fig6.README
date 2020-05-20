@@ -1,0 +1,3 @@
+'Type': data type (eDITH, eDNA, kicknet)
+'StreamOrder': Strahler stream order value (if =4, it indicates stream order higher than 3)
+'GenusRichness': Genus richness value for a given reach/site according to the dataset specified in 'Type'
