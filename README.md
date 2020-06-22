@@ -1,4 +1,5 @@
 # eDITH
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3903330.svg)](https://doi.org/10.5281/zenodo.3903330)
 MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F. Environmental DNA allows upscaling spatial patterns of biodiversity in freshwater ecosystems, *Nature Communications* (accepted), 2020.
 
 ## Main scripts
