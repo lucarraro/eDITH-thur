@@ -34,9 +34,9 @@ MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F.
 	- `eval_likelihood.m`: evaluates likelihood, given a set of parameters and read number data for a given genus.
 	- `eval_model.m`: runs the eDITH model.
 	- `GOF_NBtest.m`: performs the goodness-of-fit test.
-	- `multiple_boxplot.m`: draws multiple boxplots on the same figure.
+	- `multiple_boxplot.m`: draws multiple boxplots on the same figure. Copied from: Ander Biguri (2020). multiple_boxplot.m https://www.mathworks.com/matlabcentral/fileexchange/47233-multiple_boxplot-m), MATLAB Central File Exchange. Retrieved June 22, 2020.
 	- `neigh.m`: transforms D8 flow direction values in row/column movements.
-	- `v2struct.m`: assembles and disassembles MATLAB structures (used to import data into functions).
+	- `v2struct.m`: assembles and disassembles MATLAB structures (used to import data into functions). Copied from: Adi Navve (2020). Pack & Unpack variables to & from structures with enhanced functionality (https://www.mathworks.com/matlabcentral/fileexchange/31532-pack-unpack-variables-to-from-structures-with-enhanced-functionality), MATLAB Central File Exchange. Retrieved June 22, 2020.
 - `results`: stores results produced by scripts `MAIN_MCMC.m` and `MAIN_MCMC_subsampling.m`.
 	- `all`: results produced by `MAIN_MCMC.m`. Files' names correspond to the genera. 
 	-  `subsampling_X_Y`: results produced by `MAIN_MCMC_subsampling.m`, where `X` is the number of validation sites and `Y` the run number. Files' names correspond to the genera.
