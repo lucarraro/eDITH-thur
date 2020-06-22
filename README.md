@@ -1,5 +1,5 @@
 # eDITH
-MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F. Upscaling spatial patterns of biodiversity in freshwater ecosystems, *Nature Communications*, under review as of December 2019.
+MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F. Environmental DNA allows upscaling spatial patterns of biodiversity in freshwater ecosystems, *Nature Communications* (accepted), 2020.
 
 ## Main scripts
 - `ANALYZE_DATA.m`: analyzes data and produces figures and tables shown in the manuscript and extended data.
