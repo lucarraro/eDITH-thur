@@ -21,7 +21,7 @@ MATLAB code and data supporting Carraro L, Mächler E, Wüthrich R, Altermatt F.
 	- `DTMad8.asc`: raster map of drainage areas (obtained via Taudem subroutine run on ArcGIS).
 	- `DTMfel.asc`: pit-filled digital terrain model (obtained via Taudem subroutine run on ArcGIS).
 	- `DTMp.asc`: flow direction matrix (obtained via Taudem subroutine run on ArcGIS).
-	- `GenusData.m`: eDNA and kicknet data. Data obtained as reported in Mächler et al., 2019 <doi:10.1002/edn3.33>.
+	- `GenusData.m`: eDNA and kicknet data. Data obtained as reported in Mächler et al., 2019 https://onlinelibrary.wiley.com/doi/pdf/10.1002/edn3.33.
 	- `landcover.asc`: raster map of land cover classes covering the area of interest (processed via ArcGIS, based on data from the Swiss Federal Institute of Topography, accessible at https://www.geocat.ch/geonetwork/srv/eng/md.viewer#/full_view/cfbd4793-4225-4743-942b-d9b97acfbfcc/tab/complete).
 	- `SitesFunWorks_coordinates.xlsx`: coordinates of sites where eDNA and kicknet sampling were performed.
 	- `StageDischarge.xlsx`: stage-discharge relationships (provided by the Swiss Federal Office for the Environment, available at https://www.hydrodaten.admin.ch/en/2181.html; https://www.hydrodaten.admin.ch/en/2303.html; https://www.hydrodaten.admin.ch/en/2305.html; https://www.hydrodaten.admin.ch/en/2374.html; https://www.hydrodaten.admin.ch/en/2414.html).
